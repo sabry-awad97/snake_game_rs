@@ -236,7 +236,7 @@ fn main() -> crossterm::Result<()> {
     let mut game = Game::new();
 
     let mut last_update = Instant::now();
-    let update_rate = Duration::from_millis(100);
+    let update_rate = Duration::from_millis(10);
 
     loop {
         if event::poll(Duration::from_millis(1))? {
