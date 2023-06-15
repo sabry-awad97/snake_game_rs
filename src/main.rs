@@ -37,19 +37,10 @@ impl Output {
         execute!(stdout(), cursor::MoveTo(0, 0))
     }
 
-    fn draw_food(food: &(u16, u16)) -> crossterm::Result<()> {
-        execute!(
-            stdout(),
-            cursor::MoveTo(food.0, food.1),
-            crossterm::style::Print("@")
-        )?;
-        Ok(())
-    }
-
-    fn refresh_screen(&self, snake: &Snake, food: &(u16, u16)) -> crossterm::Result<()> {
+    fn refresh_screen(&self, snake: &Snake, food: &Food) -> crossterm::Result<()> {
         Self::clear_screen()?;
         snake.draw()?;
-        Self::draw_food(food)?;
+        food.draw()?;
         Ok(())
     }
 }
@@ -98,6 +89,15 @@ impl Food {
     fn respawn(&mut self) {
         self.x = 1 + rand::random::<u16>() % (WIDTH - 2);
         self.y = 1 + rand::random::<u16>() % (HEIGHT - 2);
+    }
+
+    fn draw(&self) -> crossterm::Result<()> {
+        execute!(
+            stdout(),
+            cursor::MoveTo(self.x, self.y),
+            crossterm::style::Print("@")
+        )?;
+        Ok(())
     }
 }
 
@@ -159,8 +159,7 @@ impl Game {
     }
 
     fn run(&mut self) -> crossterm::Result<bool> {
-        self.output
-            .refresh_screen(&self.snake, &self.food.position())?;
+        self.output.refresh_screen(&self.snake, &self.food)?;
 
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(event) = event::read()? {
