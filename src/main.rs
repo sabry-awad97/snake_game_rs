@@ -25,69 +25,89 @@ impl Drop for CleanUp {
     }
 }
 
-struct Output;
+struct Output {
+    border_printed: bool,
+}
 
 impl Output {
-    fn clear_screen() -> crossterm::Result<()> {
-        execute!(stdout(), cursor::Hide)?;
-        execute!(stdout(), terminal::Clear(ClearType::All))?;
-        execute!(stdout(), cursor::MoveTo(0, 0))?;
-        execute!(stdout(), cursor::Show)
+    fn new() -> Self {
+        Self {
+            border_printed: false,
+        }
     }
 
-    fn print_border() -> crossterm::Result<()> {
-        // Top border
-        for x in 0..WIDTH {
-            execute!(stdout(), cursor::MoveTo(x, 0), crossterm::style::Print("─"))?;
+    fn clear_inner() -> crossterm::Result<()> {
+        for y in 1..HEIGHT - 1 {
+            for x in 1..WIDTH - 1 {
+                execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print(" "))?;
+            }
         }
-        execute!(stdout(), cursor::MoveTo(0, 0), crossterm::style::Print("┌"))?;
-        execute!(
-            stdout(),
-            cursor::MoveTo(WIDTH - 1, 0),
-            crossterm::style::Print("┐")
-        )?;
+        Ok(())
+    }
 
-        // Bottom border
-        for x in 0..WIDTH {
-            execute!(
-                stdout(),
-                cursor::MoveTo(x, HEIGHT - 1),
-                crossterm::style::Print("─")
-            )?;
-        }
-        execute!(
-            stdout(),
-            cursor::MoveTo(0, HEIGHT - 1),
-            crossterm::style::Print("└")
-        )?;
-        execute!(
-            stdout(),
-            cursor::MoveTo(WIDTH - 1, HEIGHT - 1),
-            crossterm::style::Print("┘")
-        )?;
-
-        // Left border
-        for y in 0..HEIGHT {
-            execute!(stdout(), cursor::MoveTo(0, y), crossterm::style::Print("│"))?;
-        }
+    fn clear_screen() -> crossterm::Result<()> {
         execute!(stdout(), cursor::MoveTo(0, 0))?;
+        execute!(stdout(), terminal::Clear(ClearType::All))?;
+        Ok(())
+    }
 
-        // Right border
-        for y in 0..HEIGHT {
+    fn print_border(&mut self) -> crossterm::Result<()> {
+        if !self.border_printed {
+            // Top border
+            for x in 0..WIDTH {
+                execute!(stdout(), cursor::MoveTo(x, 0), crossterm::style::Print("─"))?;
+            }
+            execute!(stdout(), cursor::MoveTo(0, 0), crossterm::style::Print("┌"))?;
             execute!(
                 stdout(),
-                cursor::MoveTo(WIDTH - 1, y),
-                crossterm::style::Print("│")
+                cursor::MoveTo(WIDTH - 1, 0),
+                crossterm::style::Print("┐")
             )?;
+
+            // Bottom border
+            for x in 0..WIDTH {
+                execute!(
+                    stdout(),
+                    cursor::MoveTo(x, HEIGHT - 1),
+                    crossterm::style::Print("─")
+                )?;
+            }
+            execute!(
+                stdout(),
+                cursor::MoveTo(0, HEIGHT - 1),
+                crossterm::style::Print("└")
+            )?;
+            execute!(
+                stdout(),
+                cursor::MoveTo(WIDTH - 1, HEIGHT - 1),
+                crossterm::style::Print("┘")
+            )?;
+
+            // Left border
+            for y in 0..HEIGHT {
+                execute!(stdout(), cursor::MoveTo(0, y), crossterm::style::Print("│"))?;
+            }
+            execute!(stdout(), cursor::MoveTo(0, 0))?;
+
+            // Right border
+            for y in 0..HEIGHT {
+                execute!(
+                    stdout(),
+                    cursor::MoveTo(WIDTH - 1, y),
+                    crossterm::style::Print("│")
+                )?;
+            }
+            execute!(stdout(), cursor::MoveTo(WIDTH - 1, 0))?;
         }
-        execute!(stdout(), cursor::MoveTo(WIDTH - 1, 0))?;
+        self.border_printed = true;
 
         Ok(())
     }
 
-    fn refresh_screen(snake: &Snake, food: &Food) -> crossterm::Result<()> {
-        Self::clear_screen()?;
-        Self::print_border()?;
+    fn refresh_screen(&mut self, snake: &Snake, food: &Food) -> crossterm::Result<()> {
+        execute!(stdout(), cursor::Hide)?;
+        Self::clear_inner()?;
+        self.print_border()?;
         snake.draw()?;
         food.draw()?;
         Ok(())
@@ -132,6 +152,7 @@ struct Food {
 }
 
 struct Game {
+    output: Output,
     snake: Snake,
     food: Food,
 }
@@ -167,8 +188,13 @@ impl Game {
         let snake = Snake::new(segments, Direction::Right);
 
         let food = Food::new();
+        let output = Output::new();
 
-        Self { snake, food }
+        Self {
+            snake,
+            food,
+            output,
+        }
     }
 
     fn update_snake(&mut self) -> bool {
@@ -214,7 +240,7 @@ impl Game {
     }
 
     fn run(&mut self) -> crossterm::Result<bool> {
-        Output::refresh_screen(&self.snake, &self.food)?;
+        self.output.refresh_screen(&self.snake, &self.food)?;
 
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(event) = event::read()? {
@@ -233,6 +259,8 @@ impl Game {
 fn main() -> crossterm::Result<()> {
     let _clean_up = CleanUp;
     terminal::enable_raw_mode()?;
+    Output::clear_screen()?;
+
     let mut game = Game::new();
 
     let mut last_update = Instant::now();
