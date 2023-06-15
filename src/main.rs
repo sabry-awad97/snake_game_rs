@@ -35,8 +35,30 @@ impl Output {
         execute!(stdout(), cursor::Show)
     }
 
+    fn print_border() -> crossterm::Result<()> {
+        for y in 0..HEIGHT {
+            execute!(stdout(), cursor::MoveTo(0, y), crossterm::style::Print("█"))?;
+            execute!(
+                stdout(),
+                cursor::MoveTo(WIDTH - 1, y),
+                crossterm::style::Print("█")
+            )?;
+        }
+        for x in 0..WIDTH {
+            execute!(stdout(), cursor::MoveTo(x, 0), crossterm::style::Print("█"))?;
+            execute!(
+                stdout(),
+                cursor::MoveTo(x, HEIGHT - 1),
+                crossterm::style::Print("█")
+            )?;
+        }
+        execute!(stdout(), cursor::MoveTo(0, 0))?;
+        Ok(())
+    }
+
     fn refresh_screen(snake: &Snake, food: &Food) -> crossterm::Result<()> {
         Self::clear_screen()?;
+        Self::print_border()?;
         snake.draw()?;
         food.draw()?;
         Ok(())
