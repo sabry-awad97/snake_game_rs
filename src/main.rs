@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crossterm::event::{Event, KeyCode, KeyEvent}; /* modify */
 use crossterm::{event, terminal};
 
@@ -13,22 +15,20 @@ fn main() {
     let _clean_up = CleanUp;
     terminal::enable_raw_mode().expect("Could not turn on Raw mode");
     loop {
-        if let Event::Key(event) = event::read().expect("Failed to read line") {
-            match event {
-                KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: event::KeyModifiers::NONE,
-                    ..
-                } => break,
-                KeyEvent {
-                    code: KeyCode::Char(c),
-                    modifiers: event::KeyModifiers::NONE,
-                    ..
-                } => {
-                    println!("{}", c);
+        if event::poll(Duration::from_millis(500)).expect("Error") {
+            if let Event::Key(event) = event::read().expect("Failed to read line") {
+                match event {
+                    KeyEvent {
+                        code: KeyCode::Char('q'),
+                        modifiers: event::KeyModifiers::NONE,
+                        ..
+                    } => break,
+                    _ => {}
                 }
-                _ => {}
-            }
-        };
+                println!("{:?}\r", event);
+            };
+        } else {
+            println!("No input yet\r");
+        }
     }
 }
