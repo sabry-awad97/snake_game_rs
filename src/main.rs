@@ -37,13 +37,6 @@ impl Output {
         execute!(stdout(), cursor::MoveTo(0, 0))
     }
 
-    fn draw_snake(snake: &LinkedList<(u16, u16)>) -> crossterm::Result<()> {
-        for &(x, y) in snake {
-            execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print("█"))?;
-        }
-        Ok(())
-    }
-
     fn draw_food(food: &(u16, u16)) -> crossterm::Result<()> {
         execute!(
             stdout(),
@@ -53,13 +46,9 @@ impl Output {
         Ok(())
     }
 
-    fn refresh_screen(
-        &self,
-        snake: &LinkedList<(u16, u16)>,
-        food: &(u16, u16),
-    ) -> crossterm::Result<()> {
+    fn refresh_screen(&self, snake: &Snake, food: &(u16, u16)) -> crossterm::Result<()> {
         Self::clear_screen()?;
-        Self::draw_snake(snake)?;
+        snake.draw()?;
         Self::draw_food(food)?;
         Ok(())
     }
@@ -76,6 +65,13 @@ impl Snake {
             segments,
             direction,
         }
+    }
+
+    fn draw(&self) -> crossterm::Result<()> {
+        for &(x, y) in &self.segments {
+            execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print("█"))?;
+        }
+        Ok(())
     }
 }
 
@@ -164,7 +160,7 @@ impl Game {
 
     fn run(&mut self) -> crossterm::Result<bool> {
         self.output
-            .refresh_screen(&self.snake.segments, &self.food.position())?;
+            .refresh_screen(&self.snake, &self.food.position())?;
 
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(event) = event::read()? {
