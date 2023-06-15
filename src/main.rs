@@ -47,9 +47,23 @@ impl Output {
         Ok(())
     }
 
-    fn refresh_screen(&self, snake: &LinkedList<(u16, u16)>) -> crossterm::Result<()> {
+    fn draw_food(food: &(u16, u16)) -> crossterm::Result<()> {
+        execute!(
+            stdout(),
+            cursor::MoveTo(food.0, food.1),
+            crossterm::style::Print("@")
+        )?;
+        Ok(())
+    }
+
+    fn refresh_screen(
+        &self,
+        snake: &LinkedList<(u16, u16)>,
+        food: &(u16, u16),
+    ) -> crossterm::Result<()> {
         Self::clear_screen()?;
-        Self::draw_snake(snake)
+        Self::draw_snake(snake)?;
+        Self::draw_food(food)
     }
 }
 
@@ -57,6 +71,7 @@ struct Game {
     reader: Reader,
     output: Output,
     snake: LinkedList<(u16, u16)>,
+    food: (u16, u16),
 }
 
 impl Game {
@@ -66,6 +81,7 @@ impl Game {
         Self {
             reader: Reader,
             snake,
+            food: (20, 10),
             output: Output::new(),
         }
     }
@@ -83,7 +99,7 @@ impl Game {
     }
 
     fn run(&self) -> crossterm::Result<bool> {
-        self.output.refresh_screen(&self.snake)?;
+        self.output.refresh_screen(&self.snake, &self.food)?;
         self.process_keypress()
     }
 }
