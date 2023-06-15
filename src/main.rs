@@ -168,6 +168,16 @@ impl Snake {
         }
         Ok(())
     }
+
+    fn move_in_direction(&mut self) -> (u16, u16) {
+        let (x, y) = self.head();
+        match self.direction {
+            Direction::Up => (x, y - 1),
+            Direction::Down => (x, y + 1),
+            Direction::Left => (x - 1, y),
+            Direction::Right => (x + 1, y),
+        }
+    }
 }
 
 struct Food {
@@ -222,13 +232,7 @@ impl Game {
     }
 
     fn update_snake(&mut self) -> bool {
-        let (x, y) = self.snake.head();
-        let new_head = match self.snake.direction {
-            Direction::Up => (x, y - 1),
-            Direction::Down => (x, y + 1),
-            Direction::Left => (x - 1, y),
-            Direction::Right => (x + 1, y),
-        };
+        let new_head = self.snake.move_in_direction();
 
         if self.snake.check_self_collision(new_head) || self.snake.check_wall_collision(new_head) {
             return false;
