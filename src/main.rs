@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 const WIDTH: u16 = 40;
 const HEIGHT: u16 = 20;
 
+#[derive(Clone)]
 enum Direction {
     Up,
     Down,
@@ -21,20 +22,6 @@ impl Drop for CleanUp {
     fn drop(&mut self) {
         terminal::disable_raw_mode().expect("Unable to disable raw mode");
         Output::clear_screen().expect("Error");
-    }
-}
-
-struct Reader;
-
-impl Reader {
-    fn read_key(&self) -> crossterm::Result<KeyEvent> {
-        loop {
-            if event::poll(Duration::from_millis(500))? {
-                if let Event::Key(event) = event::read()? {
-                    return Ok(event);
-                }
-            }
-        }
     }
 }
 
@@ -79,7 +66,6 @@ impl Output {
 }
 
 struct Game {
-    reader: Reader,
     output: Output,
     snake: LinkedList<(u16, u16)>,
     food: (u16, u16),
@@ -89,42 +75,14 @@ struct Game {
 impl Game {
     fn new() -> Self {
         let mut snake = LinkedList::new();
-        snake.push_back((2, 2)); // Initial snake position
+        snake.push_back((2, 2));
 
         Self {
-            reader: Reader,
             output: Output::new(),
             snake,
-            food: (20, 10),              // Initial food position
-            direction: Direction::Right, // Initial snake direction
+            food: (20, 10),
+            direction: Direction::Right,
         }
-    }
-
-    fn process_keypress(&mut self) -> crossterm::Result<bool> {
-        match self.reader.read_key()? {
-            KeyEvent {
-                code: KeyCode::Char('q'),
-                modifiers: event::KeyModifiers::CONTROL,
-                ..
-            } => return Ok(false),
-            KeyEvent {
-                code: KeyCode::Up, ..
-            } => self.direction = Direction::Up,
-            KeyEvent {
-                code: KeyCode::Down,
-                ..
-            } => self.direction = Direction::Down,
-            KeyEvent {
-                code: KeyCode::Left,
-                ..
-            } => self.direction = Direction::Left,
-            KeyEvent {
-                code: KeyCode::Right,
-                ..
-            } => self.direction = Direction::Right,
-            _ => {}
-        }
-        Ok(true)
     }
 
     fn update_snake(&mut self) -> bool {
@@ -168,7 +126,31 @@ impl Game {
         if !self.update_snake() {
             return Ok(false);
         }
-        self.process_keypress()
+
+        if event::poll(Duration::from_millis(200))? {
+            if let Event::Key(event) = event::read()? {
+                match event {
+                    KeyEvent {
+                        code: KeyCode::Up, ..
+                    } => self.direction = Direction::Up,
+                    KeyEvent {
+                        code: KeyCode::Down,
+                        ..
+                    } => self.direction = Direction::Down,
+                    KeyEvent {
+                        code: KeyCode::Left,
+                        ..
+                    } => self.direction = Direction::Left,
+                    KeyEvent {
+                        code: KeyCode::Right,
+                        ..
+                    } => self.direction = Direction::Right,
+                    _ => {}
+                };
+            }
+        }
+        
+        Ok(true)
     }
 }
 
