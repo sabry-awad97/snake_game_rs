@@ -65,29 +65,42 @@ impl Output {
     }
 }
 
+struct Snake {
+    segments: LinkedList<(u16, u16)>,
+    direction: Direction,
+}
+
+impl Snake {
+    fn new(segments: LinkedList<(u16, u16)>, direction: Direction) -> Self {
+        Self {
+            segments,
+            direction,
+        }
+    }
+}
+
 struct Game {
     output: Output,
-    snake: LinkedList<(u16, u16)>,
+    snake: Snake,
     food: (u16, u16),
-    direction: Direction,
 }
 
 impl Game {
     fn new() -> Self {
-        let mut snake = LinkedList::new();
-        snake.push_back((2, 2));
+        let mut segments = LinkedList::new();
+        segments.push_back((2, 2));
+        let snake = Snake::new(segments, Direction::Right);
 
         Self {
             output: Output::new(),
             snake,
             food: (20, 10),
-            direction: Direction::Right,
         }
     }
 
     fn update_snake(&mut self) -> bool {
-        let (x, y) = self.snake.front().unwrap().clone();
-        let new_head = match self.direction {
+        let (x, y) = self.snake.segments.front().unwrap().clone();
+        let new_head = match self.snake.direction {
             Direction::Up => (x, y - 1),
             Direction::Down => (x, y + 1),
             Direction::Left => (x - 1, y),
@@ -101,11 +114,11 @@ impl Game {
         }
 
         // Check for collision with self
-        if self.snake.contains(&new_head) {
+        if self.snake.segments.contains(&new_head) {
             return false;
         }
 
-        self.snake.push_front(new_head);
+        self.snake.segments.push_front(new_head);
 
         // Check for collision with food
         if new_head == self.food {
@@ -114,7 +127,7 @@ impl Game {
                 1 + rand::random::<u16>() % (HEIGHT - 2),
             );
         } else {
-            self.snake.pop_back();
+            self.snake.segments.pop_back();
         }
 
         true
@@ -122,16 +135,17 @@ impl Game {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Up => self.direction = Direction::Up,
-            KeyCode::Down => self.direction = Direction::Down,
-            KeyCode::Left => self.direction = Direction::Left,
-            KeyCode::Right => self.direction = Direction::Right,
+            KeyCode::Up => self.snake.direction = Direction::Up,
+            KeyCode::Down => self.snake.direction = Direction::Down,
+            KeyCode::Left => self.snake.direction = Direction::Left,
+            KeyCode::Right => self.snake.direction = Direction::Right,
             _ => {}
         }
     }
 
     fn run(&mut self) -> crossterm::Result<bool> {
-        self.output.refresh_screen(&self.snake, &self.food)?;
+        self.output
+            .refresh_screen(&self.snake.segments, &self.food)?;
 
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(event) = event::read()? {
