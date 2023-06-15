@@ -1,5 +1,7 @@
 use crossterm::event::{Event, KeyCode, KeyEvent};
-use crossterm::{event, terminal};
+use crossterm::terminal::ClearType;
+use crossterm::{event, execute, terminal};
+use std::io::stdout;
 use std::time::Duration;
 
 struct CleanUp;
@@ -24,13 +26,33 @@ impl Reader {
     }
 }
 
+struct Output;
+
+impl Output {
+    fn new() -> Self {
+        Self
+    }
+
+    fn clear_screen() -> crossterm::Result<()> {
+        execute!(stdout(), terminal::Clear(ClearType::All))
+    }
+
+    fn refresh_screen(&self) -> crossterm::Result<()> {
+        Self::clear_screen()
+    }
+}
+
 struct Editor {
     reader: Reader,
+    output: Output,
 }
 
 impl Editor {
     fn new() -> Self {
-        Self { reader: Reader }
+        Self {
+            reader: Reader,
+            output: Output::new(),
+        }
     }
 
     fn process_keypress(&self) -> crossterm::Result<bool> {
@@ -46,6 +68,7 @@ impl Editor {
     }
 
     fn run(&self) -> crossterm::Result<bool> {
+        self.output.refresh_screen()?;
         self.process_keypress()
     }
 }
