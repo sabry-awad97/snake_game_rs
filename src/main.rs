@@ -36,10 +36,13 @@ impl Output {
         }
     }
 
-    fn clear_inner() -> crossterm::Result<()> {
+    fn clear_inner(_snake: &Snake, food: &Food) -> crossterm::Result<()> {
         for y in 1..HEIGHT - 1 {
             for x in 1..WIDTH - 1 {
-                execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print(" "))?;
+                let is_food = (x, y) == food.position();
+                if !is_food {
+                    execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print(" "))?;
+                }
             }
         }
         Ok(())
@@ -106,7 +109,7 @@ impl Output {
 
     fn refresh_screen(&mut self, snake: &Snake, food: &Food) -> crossterm::Result<()> {
         execute!(stdout(), cursor::Hide)?;
-        Self::clear_inner()?;
+        Self::clear_inner(snake, food)?;
         self.print_border()?;
         snake.draw()?;
         food.draw()?;
@@ -158,7 +161,7 @@ impl Snake {
         self.segments.push_front(new_head)
     }
 
-    fn remove_tail(&mut self) {
+    fn remove_last_segment(&mut self) {
         self.segments.pop_back();
     }
 
@@ -244,7 +247,7 @@ impl Game {
         if self.snake.check_food_collision(new_head, &mut self.food) {
             self.food.respawn()
         } else {
-            self.snake.remove_tail();
+            self.snake.remove_last_segment();
         }
 
         true
