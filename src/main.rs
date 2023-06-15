@@ -28,16 +28,12 @@ impl Drop for CleanUp {
 struct Output;
 
 impl Output {
-    fn new() -> Self {
-        Self
-    }
-
     fn clear_screen() -> crossterm::Result<()> {
         execute!(stdout(), terminal::Clear(ClearType::All))?;
         execute!(stdout(), cursor::MoveTo(0, 0))
     }
 
-    fn refresh_screen(&self, snake: &Snake, food: &Food) -> crossterm::Result<()> {
+    fn refresh_screen(snake: &Snake, food: &Food) -> crossterm::Result<()> {
         Self::clear_screen()?;
         snake.draw()?;
         food.draw()?;
@@ -72,7 +68,6 @@ struct Food {
 }
 
 struct Game {
-    output: Output,
     snake: Snake,
     food: Food,
 }
@@ -109,11 +104,7 @@ impl Game {
 
         let food = Food::new();
 
-        Self {
-            output: Output::new(),
-            snake,
-            food,
-        }
+        Self { snake, food }
     }
 
     fn update_snake(&mut self) -> bool {
@@ -159,7 +150,7 @@ impl Game {
     }
 
     fn run(&mut self) -> crossterm::Result<bool> {
-        self.output.refresh_screen(&self.snake, &self.food)?;
+        Output::refresh_screen(&self.snake, &self.food)?;
 
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(event) = event::read()? {
