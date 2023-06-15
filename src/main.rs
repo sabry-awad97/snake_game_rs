@@ -29,8 +29,10 @@ struct Output;
 
 impl Output {
     fn clear_screen() -> crossterm::Result<()> {
+        execute!(stdout(), cursor::Hide)?;
         execute!(stdout(), terminal::Clear(ClearType::All))?;
-        execute!(stdout(), cursor::MoveTo(0, 0))
+        execute!(stdout(), cursor::MoveTo(0, 0))?;
+        execute!(stdout(), cursor::Show)
     }
 
     fn refresh_screen(snake: &Snake, food: &Food) -> crossterm::Result<()> {
