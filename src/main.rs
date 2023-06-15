@@ -56,6 +56,17 @@ impl Snake {
         }
     }
 
+    fn change_direction(&mut self, direction: Direction) {
+        // Prevent the snake from reversing its direction
+        match (self.direction.clone(), direction.clone()) {
+            (Direction::Up, Direction::Down)
+            | (Direction::Down, Direction::Up)
+            | (Direction::Left, Direction::Right)
+            | (Direction::Right, Direction::Left) => {}
+            _ => self.direction = direction,
+        }
+    }
+
     fn draw(&self) -> crossterm::Result<()> {
         for &(x, y) in &self.segments {
             execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print("█"))?;
@@ -143,10 +154,10 @@ impl Game {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Up => self.snake.direction = Direction::Up,
-            KeyCode::Down => self.snake.direction = Direction::Down,
-            KeyCode::Left => self.snake.direction = Direction::Left,
-            KeyCode::Right => self.snake.direction = Direction::Right,
+            KeyCode::Up => self.snake.change_direction(Direction::Up),
+            KeyCode::Down => self.snake.change_direction(Direction::Down),
+            KeyCode::Left => self.snake.change_direction(Direction::Left),
+            KeyCode::Right => self.snake.change_direction(Direction::Right),
             _ => {}
         }
     }
