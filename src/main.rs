@@ -120,36 +120,29 @@ impl Game {
         true
     }
 
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Up => self.direction = Direction::Up,
+            KeyCode::Down => self.direction = Direction::Down,
+            KeyCode::Left => self.direction = Direction::Left,
+            KeyCode::Right => self.direction = Direction::Right,
+            _ => {}
+        }
+    }
+
     fn run(&mut self) -> crossterm::Result<bool> {
         self.output.refresh_screen(&self.snake, &self.food)?;
+
+        if event::poll(Duration::from_millis(200))? {
+            if let Event::Key(event) = event::read()? {
+                self.handle_key_event(event);
+            }
+        }
 
         if !self.update_snake() {
             return Ok(false);
         }
 
-        if event::poll(Duration::from_millis(200))? {
-            if let Event::Key(event) = event::read()? {
-                match event {
-                    KeyEvent {
-                        code: KeyCode::Up, ..
-                    } => self.direction = Direction::Up,
-                    KeyEvent {
-                        code: KeyCode::Down,
-                        ..
-                    } => self.direction = Direction::Down,
-                    KeyEvent {
-                        code: KeyCode::Left,
-                        ..
-                    } => self.direction = Direction::Left,
-                    KeyEvent {
-                        code: KeyCode::Right,
-                        ..
-                    } => self.direction = Direction::Right,
-                    _ => {}
-                };
-            }
-        }
-        
         Ok(true)
     }
 }
