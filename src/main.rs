@@ -168,7 +168,6 @@ impl Game {
         if !self.update_snake() {
             return Ok(false);
         }
-
         self.process_keypress()
     }
 }
