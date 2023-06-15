@@ -1,6 +1,6 @@
 use crossterm::event::{Event, KeyCode, KeyEvent};
 use crossterm::terminal::ClearType;
-use crossterm::{event, execute, terminal, cursor};
+use crossterm::{cursor, event, execute, terminal};
 use std::io::stdout;
 use std::time::Duration;
 
@@ -8,7 +8,8 @@ struct CleanUp;
 
 impl Drop for CleanUp {
     fn drop(&mut self) {
-        terminal::disable_raw_mode().expect("Unable to disable raw mode")
+        terminal::disable_raw_mode().expect("Unable to disable raw mode");
+        Output::clear_screen().expect("Error");
     }
 }
 
