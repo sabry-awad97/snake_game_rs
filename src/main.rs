@@ -36,23 +36,52 @@ impl Output {
     }
 
     fn print_border() -> crossterm::Result<()> {
-        for y in 0..HEIGHT {
-            execute!(stdout(), cursor::MoveTo(0, y), crossterm::style::Print("█"))?;
-            execute!(
-                stdout(),
-                cursor::MoveTo(WIDTH - 1, y),
-                crossterm::style::Print("█")
-            )?;
-        }
+        // Top border
         for x in 0..WIDTH {
-            execute!(stdout(), cursor::MoveTo(x, 0), crossterm::style::Print("█"))?;
+            execute!(stdout(), cursor::MoveTo(x, 0), crossterm::style::Print("─"))?;
+        }
+        execute!(stdout(), cursor::MoveTo(0, 0), crossterm::style::Print("┌"))?;
+        execute!(
+            stdout(),
+            cursor::MoveTo(WIDTH - 1, 0),
+            crossterm::style::Print("┐")
+        )?;
+
+        // Bottom border
+        for x in 0..WIDTH {
             execute!(
                 stdout(),
                 cursor::MoveTo(x, HEIGHT - 1),
-                crossterm::style::Print("█")
+                crossterm::style::Print("─")
             )?;
         }
+        execute!(
+            stdout(),
+            cursor::MoveTo(0, HEIGHT - 1),
+            crossterm::style::Print("└")
+        )?;
+        execute!(
+            stdout(),
+            cursor::MoveTo(WIDTH - 1, HEIGHT - 1),
+            crossterm::style::Print("┘")
+        )?;
+
+        // Left border
+        for y in 0..HEIGHT {
+            execute!(stdout(), cursor::MoveTo(0, y), crossterm::style::Print("│"))?;
+        }
         execute!(stdout(), cursor::MoveTo(0, 0))?;
+
+        // Right border
+        for y in 0..HEIGHT {
+            execute!(
+                stdout(),
+                cursor::MoveTo(WIDTH - 1, y),
+                crossterm::style::Print("│")
+            )?;
+        }
+        execute!(stdout(), cursor::MoveTo(WIDTH - 1, 0))?;
+
         Ok(())
     }
 
