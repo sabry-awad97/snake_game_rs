@@ -1,6 +1,7 @@
 use crossterm::event::{Event, KeyCode, KeyEvent};
 use crossterm::terminal::ClearType;
 use crossterm::{cursor, event, execute, terminal};
+use std::collections::LinkedList;
 use std::io::stdout;
 use std::time::Duration;
 
@@ -39,20 +40,32 @@ impl Output {
         execute!(stdout(), cursor::MoveTo(0, 0))
     }
 
-    fn refresh_screen(&self) -> crossterm::Result<()> {
-        Self::clear_screen()
+    fn draw_snake(snake: &LinkedList<(u16, u16)>) -> crossterm::Result<()> {
+        for &(x, y) in snake {
+            execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print("█"))?;
+        }
+        Ok(())
+    }
+
+    fn refresh_screen(&self, snake: &LinkedList<(u16, u16)>) -> crossterm::Result<()> {
+        Self::clear_screen()?;
+        Self::draw_snake(snake)
     }
 }
 
-struct Editor {
+struct Game {
     reader: Reader,
     output: Output,
+    snake: LinkedList<(u16, u16)>,
 }
 
-impl Editor {
+impl Game {
     fn new() -> Self {
+        let mut snake = LinkedList::new();
+        snake.push_back((2, 2));
         Self {
             reader: Reader,
+            snake,
             output: Output::new(),
         }
     }
@@ -70,7 +83,7 @@ impl Editor {
     }
 
     fn run(&self) -> crossterm::Result<bool> {
-        self.output.refresh_screen()?;
+        self.output.refresh_screen(&self.snake)?;
         self.process_keypress()
     }
 }
@@ -78,7 +91,7 @@ impl Editor {
 fn main() -> crossterm::Result<()> {
     let _clean_up = CleanUp;
     terminal::enable_raw_mode()?;
-    let editor = Editor::new();
-    while editor.run()? {}
+    let game = Game::new();
+    while game.run()? {}
     Ok(())
 }
