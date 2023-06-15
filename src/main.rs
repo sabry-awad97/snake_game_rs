@@ -19,7 +19,7 @@ fn main() -> crossterm::Result<()> {
                 match event {
                     KeyEvent {
                         code: KeyCode::Char('q'),
-                        modifiers: event::KeyModifiers::NONE,
+                        modifiers: event::KeyModifiers::CONTROL,
                         ..
                     } => break,
                     _ => {}
