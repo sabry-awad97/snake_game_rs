@@ -138,6 +138,30 @@ impl Snake {
         }
     }
 
+    fn check_self_collision(&self, new_head: (u16, u16)) -> bool {
+        self.segments.contains(&new_head)
+    }
+
+    fn check_wall_collision(&self, new_head: (u16, u16)) -> bool {
+        new_head.0 == 0 || new_head.0 >= WIDTH - 1 || new_head.1 == 0 || new_head.1 >= HEIGHT - 1
+    }
+
+    fn check_food_collision(&mut self, new_head: (u16, u16), food: &mut Food) -> bool {
+        new_head == food.position()
+    }
+
+    fn head(&mut self) -> (u16, u16) {
+        self.segments.front().unwrap().clone()
+    }
+
+    fn set_head(&mut self, new_head: (u16, u16)) {
+        self.segments.push_front(new_head)
+    }
+
+    fn remove_tail(&mut self) {
+        self.segments.pop_back();
+    }
+
     fn draw(&self) -> crossterm::Result<()> {
         for &(x, y) in &self.segments {
             execute!(stdout(), cursor::MoveTo(x, y), crossterm::style::Print("█"))?;
@@ -198,7 +222,7 @@ impl Game {
     }
 
     fn update_snake(&mut self) -> bool {
-        let (x, y) = self.snake.segments.front().unwrap().clone();
+        let (x, y) = self.snake.head();
         let new_head = match self.snake.direction {
             Direction::Up => (x, y - 1),
             Direction::Down => (x, y + 1),
@@ -206,24 +230,17 @@ impl Game {
             Direction::Right => (x + 1, y),
         };
 
-        // Check for collision with walls
-        if new_head.0 == 0 || new_head.0 >= WIDTH - 1 || new_head.1 == 0 || new_head.1 >= HEIGHT - 1
-        {
+        if self.snake.check_self_collision(new_head) || self.snake.check_wall_collision(new_head) {
             return false;
         }
 
-        // Check for collision with self
-        if self.snake.segments.contains(&new_head) {
-            return false;
-        }
-
-        self.snake.segments.push_front(new_head);
+        self.snake.set_head(new_head);
 
         // Check for collision with food
-        if new_head == self.food.position() {
+        if self.snake.check_food_collision(new_head, &mut self.food) {
             self.food.respawn()
         } else {
-            self.snake.segments.pop_back();
+            self.snake.remove_tail();
         }
 
         true
