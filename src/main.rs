@@ -79,10 +79,30 @@ impl Snake {
     }
 }
 
+struct Food {
+    x: u16,
+    y: u16,
+}
+
 struct Game {
     output: Output,
     snake: Snake,
-    food: (u16, u16),
+    food: Food,
+}
+
+impl Food {
+    fn new() -> Self {
+        Self { x: 20, y: 10 }
+    }
+
+    fn position(&self) -> (u16, u16) {
+        (self.x, self.y)
+    }
+
+    fn respawn(&mut self) {
+        self.x = 1 + rand::random::<u16>() % (WIDTH - 2);
+        self.y = 1 + rand::random::<u16>() % (HEIGHT - 2);
+    }
 }
 
 impl Game {
@@ -91,10 +111,12 @@ impl Game {
         segments.push_back((2, 2));
         let snake = Snake::new(segments, Direction::Right);
 
+        let food = Food::new();
+
         Self {
             output: Output::new(),
             snake,
-            food: (20, 10),
+            food,
         }
     }
 
@@ -121,11 +143,8 @@ impl Game {
         self.snake.segments.push_front(new_head);
 
         // Check for collision with food
-        if new_head == self.food {
-            self.food = (
-                1 + rand::random::<u16>() % (WIDTH - 2),
-                1 + rand::random::<u16>() % (HEIGHT - 2),
-            );
+        if new_head == self.food.position() {
+            self.food.respawn()
         } else {
             self.snake.segments.pop_back();
         }
@@ -145,7 +164,7 @@ impl Game {
 
     fn run(&mut self) -> crossterm::Result<bool> {
         self.output
-            .refresh_screen(&self.snake.segments, &self.food)?;
+            .refresh_screen(&self.snake.segments, &self.food.position())?;
 
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(event) = event::read()? {
